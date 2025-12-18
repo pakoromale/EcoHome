@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django import forms
 from django.http import JsonResponse
+import json
 from .models import Product, Category, Review, Order, OrderItem
 
 # Кастомные формы с русскими подписями
@@ -68,18 +69,58 @@ def cart(request):
         'total_price': total_price
     })
 
-@login_required
+# Оформление заказа (упрощённая версия)
 def checkout(request):
     if request.method == 'POST':
-        # Логика оформления заказа
-        pass
-    return render(request, 'checkout.html')
+        try:
+            # Получаем данные из формы
+            name = request.POST.get('name', '')
+            email = request.POST.get('email', '')
+            address = request.POST.get('address', '')
+            
+            # Если пользователь авторизован — связываем заказ с ним
+            if request.user.is_authenticated:
+                user = request.user
+                # Можно сохранить заказ в БД
+                # order = Order.objects.create(
+                #     user=user,
+                #     customer_name=name,
+                #     customer_email=email,
+                #     customer_address=address,
+                #     total=0,
+                #     status='pending'
+                # )
+            else:
+                user = None
+            
+            # Демо-номер заказа
+            order_number = str(abs(hash(name + email + str(request.user.id if request.user.is_authenticated else ''))))[-6:]
+            
+            messages.success(request, 
+                f'✅ Заказ оформлен! {name}, мы свяжемся с вами по email {email}. ' +
+                f'Номер заказа: #{order_number}'
+            )
+            
+            # Очищаем корзину (клиентская часть через JS)
+            # localStorage.removeItem('cart')
+            
+            return redirect('home')
+            
+        except Exception as e:
+            messages.error(request, f'Ошибка при оформлении заказа: {str(e)}')
+            return redirect('cart')
+    
+    # Если GET запрос - показываем корзину
+    return redirect('cart')
 
+# Личный кабинет
 @login_required
 def profile(request):
-    orders = Order.objects.filter(user=request.user).order_by('-created_at')[:10]
+    # Получаем заказы пользователя
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
     
     if request.method == 'POST':
+        # Обновление данных пользователя
         user = request.user
         user.first_name = request.POST.get('first_name', '')
         user.last_name = request.POST.get('last_name', '')
@@ -87,7 +128,10 @@ def profile(request):
         messages.success(request, 'Данные успешно обновлены!')
         return redirect('profile')
     
-    return render(request, 'profile.html', {'orders': orders})
+    return render(request, 'profile.html', {
+        'orders': orders,
+        'user': request.user
+    })
 
 def login_view(request):
     if request.user.is_authenticated:

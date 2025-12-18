@@ -3,53 +3,132 @@
 {% block title %}Корзина | EcoHome{% endblock %}
 
 {% block content %}
-<section class="cart-section">
-    <div class="container">
-        <h1>Ваша корзина</h1>
-        
-        {% if cart_items %}
-        <div class="cart-items">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Товар</th>
-                        <th>Цена</th>
-                        <th>Количество</th>
-                        <th>Сумма</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in cart_items %}
-                    <tr>
-                        <td class="product-info">
-                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" width="60">
-                            <span>{{ item.product.name }}</span>
-                        </td>
-                        <td>{{ item.product.price }} ₽</td>
-                        <td>
-                            <input type="number" value="{{ item.quantity }}" min="1" style="width: 60px;">
-                        </td>
-                        <td>{{ item.total_price }} ₽</td>
-                        <td>
-                            <button class="remove-btn">🗑️</button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            
-            <div class="cart-total">
-                <h3>Итого: <span id="total-price">{{ total_price }} ₽</span></h3>
-                <a href="{% url 'checkout' %}" class="btn">Оформить заказ</a>
-            </div>
-        </div>
-        {% else %}
-        <div class="empty-cart">
-            <p>Ваша корзина пуста</p>
-            <a href="{% url 'catalog' %}" class="btn">Перейти в каталог</a>
-        </div>
-        {% endif %}
+<div class="container my-5">
+    <h1 class="mb-4">Ваша корзина</h1>
+    
+    <div id="cart-items">
+        <!-- Здесь будут товары из корзины -->
     </div>
-</section>
+    
+    <div id="empty-cart" style="display: none;">
+        <div class="alert alert-info">
+            <h4>Корзина пуста</h4>
+            <p>Добавьте товары из каталога!</p>
+            <a href="{% url 'catalog' %}" class="btn btn-outline-success">Перейти в каталог</a>
+        </div>
+    </div>
+    
+    <div id="order-form" style="display: none;">
+        <h3 class="mt-5">Оформление заказа</h3>
+        <div class="simple-form mt-3">
+            <form method="post" action="{% url 'checkout' %}" id="order-form-el">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Ваше имя</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Адрес доставки</label>
+                    <textarea name="address" class="form-control" rows="3" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Оформить заказ</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Загружаем корзину при загрузке страницы
+document.addEventListener('DOMContentLoaded', function() {
+    loadCart();
+});
+
+function loadCart() {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let cartContainer = document.getElementById('cart-items');
+    let emptyCart = document.getElementById('empty-cart');
+    let orderForm = document.getElementById('order-form');
+    
+    if (cart.length === 0) {
+        emptyCart.style.display = 'block';
+        orderForm.style.display = 'none';
+        cartContainer.innerHTML = '';
+        return;
+    }
+    
+    emptyCart.style.display = 'none';
+    orderForm.style.display = 'block';
+    
+    let html = '<div class="table-responsive"><table class="table"><thead><tr>' +
+               '<th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th></th></tr></thead><tbody>';
+    
+    let total = 0;
+    
+    cart.forEach(item => {
+        let itemTotal = item.price * item.quantity;
+        total += itemTotal;
+        
+        html += `<tr>
+            <td>${item.name}</td>
+            <td>${item.price} руб.</td>
+            <td>
+                <button onclick="updateQuantity(${item.id}, ${item.quantity - 1})" class="btn btn-sm btn-outline-secondary">-</button>
+                <span class="mx-2">${item.quantity}</span>
+                <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})" class="btn btn-sm btn-outline-secondary">+</button>
+            </td>
+            <td>${itemTotal} руб.</td>
+            <td><button onclick="removeFromCart(${item.id})" class="btn btn-sm btn-danger">×</button></td>
+        </tr>`;
+    });
+    
+    html += `</tbody></table></div>
+            <div class="text-end mt-3">
+                <h4>Итого: <span id="total-sum">${total}</span> руб.</h4>
+            </div>`;
+    
+    cartContainer.innerHTML = html;
+}
+
+function updateQuantity(productId, newQuantity) {
+    if (newQuantity < 1) {
+        removeFromCart(productId);
+        return;
+    }
+    
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    let item = cart.find(i => i.id === productId);
+    
+    if (item) {
+        item.quantity = newQuantity;
+        localStorage.setItem('cart', JSON.stringify(cart));
+        loadCart();
+    }
+}
+
+function removeFromCart(productId) {
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    cart = cart.filter(item => item.id !== productId);
+    localStorage.setItem('cart', JSON.stringify(cart));
+    loadCart();
+}
+
+document.getElementById('order-form-el').addEventListener('submit', function(e) {
+    // Можно отправить корзину вместе с формой
+    let cart = JSON.parse(localStorage.getItem('cart')) || [];
+    
+    // Добавляем скрытое поле с корзиной
+    let cartInput = document.createElement('input');
+    cartInput.type = 'hidden';
+    cartInput.name = 'cart_data';
+    cartInput.value = JSON.stringify(cart);
+    this.appendChild(cartInput);
+    
+    // Очищаем корзину после отправки
+    localStorage.removeItem('cart');
+});
+</script>
 {% endblock %}
