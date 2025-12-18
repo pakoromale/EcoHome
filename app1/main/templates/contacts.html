@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Контакты | EcoHome{% endblock %}
+
+{% block content %}
+<section class="contacts-section">
+    <div class="container">
+        <h1>Контакты</h1>
+        <div class="contacts-wrapper">
+            <div class="contact-info">
+                <h2>Наши контактные данные</h2>
+                <div class="contact-item">
+                    <strong>📧 Email:</strong>
+                    <p>support@ecohome.ru</p>
+                </div>
+                <div class="contact-item">
+                    <strong>📞 Телефон:</strong>
+                    <p>+7 (999) 123-45-67</p>
+                </div>
+                <div class="contact-item">
+                    <strong>📍 Адрес:</strong>
+                    <p>г. Москва, ул. Экологическая, д. 15</p>
+                </div>
+                <div class="contact-item">
+                    <strong>🕒 Часы работы:</strong>
+                    <p>Пн-Пт: 9:00-18:00<br>Сб-Вс: 10:00-16:00</p>
+                </div>
+            </div>
+            
+            <div class="contact-form">
+                <h2>Форма обратной связи</h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="text" name="name" placeholder="Ваше имя" required>
+                    <input type="email" name="email" placeholder="Ваш email" required>
+                    <textarea name="message" rows="5" placeholder="Ваше сообщение" required></textarea>
+                    <button type="submit" class="btn">Отправить сообщение</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

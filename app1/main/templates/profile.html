@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}Профиль | EcoHome{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+    <div class="container">
+        <h1>Личный кабинет</h1>
+        
+        <div class="profile-info">
+            <h2>Ваши данные</h2>
+            <form method="post">
+                {% csrf_token %}
+                <input type="text" name="first_name" value="{{ user.first_name }}" placeholder="Имя">
+                <input type="text" name="last_name" value="{{ user.last_name }}" placeholder="Фамилия">
+                <input type="email" value="{{ user.email }}" readonly>
+                <button type="submit" class="btn">Сохранить изменения</button>
+            </form>
+        </div>
+        
+        <div class="profile-orders">
+            <h2>История заказов</h2>
+            {% if orders %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>№ заказа</th>
+                        <th>Дата</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.created_at|date:"d.m.Y" }}</td>
+                        <td>{{ order.total }} ₽</td>
+                        <td><span class="status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>У вас пока нет заказов</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

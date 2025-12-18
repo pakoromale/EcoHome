@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Корзина | EcoHome{% endblock %}
+
+{% block content %}
+<section class="cart-section">
+    <div class="container">
+        <h1>Ваша корзина</h1>
+        
+        {% if cart_items %}
+        <div class="cart-items">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Цена</th>
+                        <th>Количество</th>
+                        <th>Сумма</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr>
+                        <td class="product-info">
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" width="60">
+                            <span>{{ item.product.name }}</span>
+                        </td>
+                        <td>{{ item.product.price }} ₽</td>
+                        <td>
+                            <input type="number" value="{{ item.quantity }}" min="1" style="width: 60px;">
+                        </td>
+                        <td>{{ item.total_price }} ₽</td>
+                        <td>
+                            <button class="remove-btn">🗑️</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="cart-total">
+                <h3>Итого: <span id="total-price">{{ total_price }} ₽</span></h3>
+                <a href="{% url 'checkout' %}" class="btn">Оформить заказ</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-cart">
+            <p>Ваша корзина пуста</p>
+            <a href="{% url 'catalog' %}" class="btn">Перейти в каталог</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
